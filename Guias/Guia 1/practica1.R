@@ -307,3 +307,407 @@ boxplot(nubes_df$CONTROLES,
 # La mayoria de las nubes tratadas tienden a tener valores mas altos que los de control.
 # De hecho, la mediana de las nubes tratadas es superior al tercer cuantil de las nubes de control
 # O sea que el 50% de las nubes tratadas emitieron mas lluvia que el 75% de las de control
+
+# b 
+
+# Dos gráficos lado a lado
+par(mfrow = c(1, 2))
+
+# QQ-plot grupo 1
+qqnorm(nubes_df$CONTROLES,
+       main = "QQ-plot Grupo de control")
+qqline(nubes_df$CONTROLES, col = "red")
+
+# QQ-plot grupo 2
+qqnorm(nubes_df$TRATADAS,
+       main = "QQ-plot Grupo de Tratadas")
+qqline(nubes_df$TRATADAS, col = "red")
+
+# Ninguna parece seguir una distribucion normal
+
+# c
+
+nubes_df_ln = log(nubes_df)
+
+# Dos gráficos lado a lado
+par(mfrow = c(1, 2))
+
+# QQ-plot grupo 1
+qqnorm(nubes_df_ln$CONTROLES,
+       main = "QQ-plot Grupo de control Ln")
+qqline(nubes_df_ln$CONTROLES, col = "red")
+
+# QQ-plot grupo 2
+qqnorm(nubes_df_ln$TRATADAS,
+       main = "QQ-plot Grupo de Tratadas Ln")
+qqline(nubes_df_ln$TRATADAS, col = "red")
+
+#Si tomamos logaritmo, se ve que parecen seguir una distribucion normal
+
+#d 
+par(mfrow=c(1,2))
+boxplot(nubes_df$CONTROLES,
+        nubes_df$TRATADAS,
+        names=c("CONTROL","TRATADA"),
+        main="datos originales",
+        xlab="Tipo de nube",
+        ylab="Cantidad de agua caida",
+        horizontal=TRUE)
+
+boxplot(nubes_df_ln$CONTROLES,
+        nubes_df_ln$TRATADAS,
+        names=c("CONTROL","TRATADA"),
+        main="datos transformados",
+        xlab="Tipo de nube",
+        ylab="Cantidad de agua caida",
+        horizontal=TRUE)
+
+#se veq que los outliers pasaron a ser aquellos que toman valors mas bajos
+
+# ---- EJERCICIO 7 ----
+
+credit_card_df = read.csv(paste(data_dir, "data_credit_card.csv", sep="/"), header=TRUE)
+head(credit_card_df)
+# a - graficar la distribucion empirica para cada variable
+
+par(mfrow=c(2, 2))
+
+for(variable in colnames(credit_card_df)) { #son 4 btw
+  plot(density(credit_card_df[, variable]), 
+               main = paste("KDE empirica de ", variable),
+               xlab = "Valor medido",
+               ylab = "Densidad")
+}
+
+# tenure parece seguir una clara normal con media en el 12
+par(mfrow=c(1,1))
+hist(credit_card_df$tenure, bin=6)
+# Pero si vemos el histograma (son valores discretos), no parece ser el caso
+# Podria llegar a modelarse como una geometrica: muy alta proba en torno al 12, pero decrece rapido a medida que se aleja
+
+# credit_limit tambien pare ser aproximable por una normal, aunque 
+# a la derecha vemos que no baja de manera "suave", no es simetrica
+par(mfrow=c(1,1))
+hist(credit_card_df$credit_limit)
+
+# viendo el limite de credito, se ve clarament que esa es una exponencial (tomemos valores continuos)
+# aunque hay varios valores en torno al 15000
+
+# purchases concentra casi todos sus valores en torno al 0, con KDE pareciese que se puede aproximar con una normal en ese entorno
+par(mfrow=c(1,1))
+hist(credit_card_df$purchases, breaks=100)
+# Pero con el histograma se ve claramente exponencial
+
+# finalmente, purchases_freq parece tener ocultas dos normales, una en torno al 0 y otra en torno al 1
+par(mfrow=c(1,1))
+hist(credit_card_df$purchases_freq, breaks=30)
+
+# Con el histograma se ve que concentra mucha probabilidad en los extremos, pero en
+# el medio es mas o menos uniforme. No conozco una distribucion generica para modelarlo.
+# Nada, seria escribir una f de densidad a mano con esta pinta y chau.
+plot(density(credit_card_df$purchases_freq, kernel="rectangular"))
+
+# b - Para la variable credit limit hacer un histograma y un gráfico de densidad usando
+#la funcion density, ¿Qué observa? ¿Le parece adecuado realizar estos gráficos para las
+#variables purchases y tenure?
+
+# ya lo hice antes: hay algunas variables que parece que toman cierta distribucion viendo
+# el KDE, pero si vemos el histograma nos damos cuenta que en verdad convendria
+# modelarlas con otras
+
+# c - Para la variable tenure hacer un barplot con las frecuencias relativas de cada valor.
+# ¿Qué observa?
+par(mfrow=c(1,1))
+barplot(prop.table(table(credit_card_df$tenure)))
+
+# casi toda la probabilidad (aprox 80%) se concentra en 12 meses
+
+# d - Para todas las variables, calcular la media, la mediana y la media α−podada (con
+# α =0.1). Comparar los resultados y justificar. ¿Qué medida de posición del centro de
+# los datos le parece más adecuada en cada caso?
+
+par(mfrow = c(2, 2))
+
+for (variable in colnames(credit_card_df)) {
+  x <- credit_card_df[[variable]]
+  
+  # medidas
+  m <- mean(x, na.rm = TRUE)
+  med <- median(x, na.rm = TRUE)
+  mt <- mean(x, trim = 0.1, na.rm = TRUE)  # media 10% podada
+  
+  # KDE
+  plot(density(x, na.rm = TRUE),
+       main = paste("KDE empírica de", variable),
+       xlab = "Valor medido",
+       ylab = "Densidad")
+  
+  # líneas
+  abline(v = m,   col = "red",  lwd = 2, lty = 2) # media
+  abline(v = med, col = "blue", lwd = 2, lty = 3) # mediana
+  abline(v = mt,  col = "darkgreen", lwd = 2, lty = 4) # media 0.1-podada
+  
+  # leyenda
+  legend("topright",
+         legend = c("Media", "Mediana", "Media 0.1-podada"),
+         col = c("red", "blue", "darkgreen"),
+         lty = c(2, 3, 4),
+         lwd = 2,
+         bty = "n", cex = 0.8)
+}
+
+
+# Dado las observaciones que hicimos antes para cada variable, podriamos tomar:
+# Para purchases, cualquiera, dan muy similar, cerquita de 0. Quiza la mediana porque es la mas pequenia.
+# Para credit_limit, parece exponencial, por LGN la media deberia ser parecida a la esperanza,
+# aunque las otras medidas de centralidad son similares tambien
+# Para purchases_freq, la probabilidad se centraba en los bordes, mientras que en el medio era aproximadamente uniforme.
+# Su centro esta en el medio, la media o la media 0.1 podada son buenas, aunque
+# la mediana refleja que hay una tendencia ligera a tirar mas para el 0
+# Para tenure, vimos que el 80% de la proba cae en el 12, el resto se distribuye mas o menos uniforme.
+# la media podada y la mediana dan al 12 como valor central.
+
+# e - Para todas las variables, obtener los cuantiles de nivel 0.25 y 0.75 de los datos. Calcular
+# el rango inter-cuartı́lico y la MAD muestrales. Graficar boxplots. ¿Qué observa?
+
+par(mfrow = c(2, 2))
+
+for (variable in colnames(credit_card_df)) {
+  x <- credit_card_df[[variable]]
+  
+  
+  # KDE
+  boxplot(x,
+       main = paste("Boxplot de", variable),
+       xlab = "Valor medido", horizontal=TRUE)
+  
+
+}
+
+# - purchases se encuentra mega concentrado hacia valores bajos y tiene 
+# muchos outliers con valores altos (cierra si lo aproximamos con una exponencial)
+# - credit_limit tambien es similar, pero no tiene outliers tan ruidosos
+# como los de purchases
+# - purchases_freq tiene un rango intercuantil muy grande, muchos datos caen ahi,
+# vimos en los histogramas que se distribuian aproximadamente uniformemente entre el 0 y el 1,
+# pero cerca de ellos, la probabilidad aumenta mucho. Se refleja en que los bigotes del boxplot 
+# son cortitos
+# - tenure es horrible. Y si, tiene el 80% de proba en un bin y el resto valen re poco.
+
+# f - Calcular el desvı́o estándar, el coeficiente de asimetrı́a y el coeficiente de curtosis mues-
+# trales. Interpretar los resultados en relación a las distribuciones vistas.
+
+# q conio es eso?
+# 
+# 📌 Coeficiente de asimetría (skewness)
+# 
+# Mide si la distribución está sesgada hacia la izquierda o hacia la derecha respecto de la media.
+# 
+# Valor ≈ 0 → simétrica (como la normal).
+# 
+# Valor > 0 → cola más larga a la derecha (asimetría positiva).
+# 
+# Valor < 0 → cola más larga a la izquierda (asimetría negativa).
+
+
+# 📌 Coeficiente de curtosis (kurtosis)
+# 
+# Mide el apuntamiento o achatamiento de la distribución en comparación con la normal.
+# 
+# Normal → curtosis ≈ 3 (esto se llama mesocúrtica).
+# 
+# > 3 → más “picuda” y con colas más pesadas (leptocúrtica).
+# 
+# < 3 → más “aplanada” (platicúrtica).
+# 
+# A veces se reporta exceso de curtosis = curtosis − 3 (para que la normal dé 0).
+
+library(moments)
+
+for (variable in colnames(credit_card_df)) {
+  x <- credit_card_df[[variable]]
+  print(paste("Medidas para", variable))
+  print(paste("El desvio estandar es", sd(x)))                # desvío estándar
+  print(paste("El coeficiente de asimetria s", skewness(x)))           # coeficiente de asimetría
+  print(paste("El coeficiente de curtosis es", kurtosis(x)))          # coeficiente de curtosis
+  print("")
+}
+
+# y bueno, siguiendo las interpretaciones de los comentarios de arriba,
+# se condice con lo observado en items anteriores
+
+# g) Identificar datos atı́picos. ¿Deberı́an excluirse? ¿Cómo se modifican las medidas obte-
+# nidas anteriormente si se los excluye?
+
+# los boxplot dan muchos datos atipicos en purchases y credit_limit, pero si lo modelamos como
+# una exponencial, es posible que aparezan. Excluirlos no cambiaria cualitativamente la eleccion del modelo en ese caso
+# las medidas de asimetria y curtosis serian mas pequenias, eso si.
+
+# respecto de tenure, la cantidad de meses que le quedan al cliente para cancelar el credito,
+# no tendria mucho sentido excluir esos dtos.
+
+
+par(mfrow=c(1,1))
+
+# ---- EJERCICIO 8 ----
+
+library(readxl)
+
+ciclo_combinado_df <- read_excel(paste(data_dir, "ciclocombinado.xlsx", sep="/"))
+head(ciclo_combinado_df)
+
+# a - Realizar un histograma y un gráfico density con los datos de PE, ¿Qué se observa?
+
+par(mfrow=c(1,2))
+hist(ciclo_combinado_df$PE)
+plot(density(ciclo_combinado_df$PE))
+
+# A simple vista, el histograma parece seguir una distribucion normal,
+# pero viendo el KDE, se nota que parecen haber dos rangos que concentran bastante probabildiad
+# Uno en torno al 440 y otro en torno al 470
+
+# b - Clasificar los datos en dos vectores según la variable HighTemp y realizar gráficos
+# density separados. Visualizar simultáneamente los gráficos en la misma escala. ¿Qué
+# se observa?
+
+high_temp_df = ciclo_combinado_df[ciclo_combinado_df$HighTemp==1, "PE"]
+low_temp_df = ciclo_combinado_df[ciclo_combinado_df$HighTemp==0, "PE"]
+plot(density(high_temp_df[[1]]),
+     main="KDE para observacions con alta temperatura")
+plot(density(low_temp_df[[1]]),
+     main="KDE para observacions con baja temperatura")
+
+# Los dias con alta temperatura terminaron con registros centrados
+# en torno al 440, mientras que los de baja en torno al 470.
+# Por eso el KDE original mostraba dos picos
+
+# c - Estimar P (PE < 450|HighTemp = 0) y P (PE < 300|HighTemp = 1).
+
+#el caso menor a 300 para high temp = 1 da 0
+
+#para el caso de high temp = 0, intengro 
+
+dens_low_temp <- density(low_temp_df[[1]])
+
+fun_dens_low_temp <- approxfun(dens_low_temp$x, dens_low_temp$y)  # función interpolada de la densidad
+
+#aproximo entre 430 y 450, total antes da 0
+integrate(fun_dens_low_temp, lower = 430, upper =450)$value
+#algo as como 4%
+
+# d - Estimar P (PE < 450).
+# Nada, proba total
+# P (PE < 450) = P (PE < 450 | highTemp) P(highTemp) + P (PE < 450 | lowTemp) P(lowTemp)
+
+dist_temp = prop.table(table(ciclo_combinado_df$HighTemp))
+p_high_temp <- dist_temp["1"][[1]]
+p_low_temp <- dist_temp["0"][[1]]
+p_given_low_temp <- 0.04 #era algo asi
+
+dens_high_temp <- density(high_temp_df[[1]])
+fun_dens_high_temp <- approxfun(dens_high_temp$x, dens_high_temp$y)  # función interpolada de la densidad
+#aproximo entre 410 y 450, total antes da 0
+p_given_high_temp <- integrate(fun_dens_high_temp, lower = 420, upper =450)$value
+
+p = p_given_high_temp * p_high_temp + p_given_low_temp * p_low_temp
+
+p # algo asi como 0.47
+
+#e - Estimar la potencia mı́nima garantizada con probabilidad 0.9 para un cierto dı́a con
+# Hightemp = 1
+
+# Busoc X tal que
+# P(PE > a  | highTemp) >= 0.9
+
+a=470
+b=470
+p <- 0
+while(p < 0.9) {
+  a <- a - 1
+  p <- integrate(fun_dens_high_temp, lower = a, upper = b)$value
+}
+p
+a
+print(paste("Con probabilidad", p, "se obtendra un PE mayor a", a))
+
+#f - Estimar la potencia mı́nima garantizada con probabilidad 0.9 para un cierto dı́a.
+# Nada, para un dia en gneal hay que usar bayes/proba condicional. Es definir una funcion y hacer lo mismo que recine, chau
+
+# ---- EJERCICIO 9 ----
+
+
+file_name = "Debernardi.csv"
+file_path = paste(data_dir, file_name, sep="/")
+
+debernardi_df = read.csv(file_path, header=TRUE)
+
+head(debernardi_df)
+
+# a - hacer histograma de LYVE1 discriminando por Diagnosis
+
+par(mfrow=c(1,1))
+
+debernardi_df$diagnosis <- as.factor(debernardi_df$diagnosis)
+
+library(ggplot2) 
+ggplot(debernardi_df, 
+       aes(x = LYVE1, fill = diagnosis)) + 
+  geom_histogram(position = "stack", color = "black", bins = 20) + 
+  theme_minimal() + labs(title = "Distribución de LYVE1 por tipo de diagnostico", x = "LYVE1", y = "Frecuencia")
+
+# Graficar, en distintos colores y superpuestas, las funciones de distribución empı́ricas
+# de la variable LYVE1 según los niveles de la variable factor diagnosis. Decidir si la
+# siguiente afirmación es verdadera o falsa y justificar: “los valores de la variable LYVE1
+# tienden a ser más altos entre quienes tienen cáncer de páncreas que entre quienes sufren
+# otras enfermedades asociadas al páncreas”.
+
+
+ggplot(debernardi_df, aes(x = LYVE1, color = diagnosis)) +
+  geom_density(size = 1) +
+  theme_minimal() +
+  labs(title = "Densidad de LYVE1 por diagnóstico",
+       x = "LYVE1", y = "Densidad")
+
+# 1 no tiene cancer de pancreas - linea roja
+# 2 tiene otra enfermedad - linea verde
+# 3 tiene cancer de pancreas - linea azul
+
+# es correcta, para valores "altos", los tipo 1 decaen rapido, los tipo 2 decaen lento pero los tipo 3 decaen aun mas lento
+
+# c - Realizar boxplots paralelos para la variable LYVE1 según los niveles de la variable
+#factor diagnosis, considerando el sexo de los pacientes (variable sex). Decidir si la
+#siguiente afirmación es verdadera o falsa y justificar: “en términos generales, el sexo del
+#paciente no afecta los niveles de la proteı́na que se mide en la variable LYVE1”. 
+
+par(mfrow=c(3,1))
+
+boxplot(LYVE1 ~ sex, 
+        data = debernardi_df[debernardi_df$diagnosis==1, ],
+        main="Boxplots de los niveles de LYVE1 con diganostico 1 por sexo",
+        xlab = "Nivel medido",
+        ylab = "Sexo",
+        horizontal=TRUE)
+
+
+boxplot(LYVE1 ~ sex, 
+        data = debernardi_df[debernardi_df$diagnosis==2, ],
+        main="Boxplots de los niveles de LYVE1 con diganostico 2 por sexo",
+        xlab = "Nivel medido",
+        ylab = "Sexo",
+        horizontal=TRUE)
+
+
+boxplot(LYVE1 ~ sex, 
+        data = debernardi_df[debernardi_df$diagnosis==3, ],
+        main="Boxplots de los niveles de LYVE1 con diganostico 3 por sexo",
+        xlab = "Nivel medido",
+        ylab = "Sexo",
+        horizontal=TRUE)
+
+# para diagnosticos de tipo 3 (cancer de pancreas), no hay grandes diferencias
+# pero para diagnosticos de tipo 1 (no tienen cancer de pancreas), las mujeres tienen
+# tienden a tener valores menores que los hombres
+# en el tipo 2 ocurre similar, aunque de manera menos abrupta
+
+# la afirmacion es falsa.
+
